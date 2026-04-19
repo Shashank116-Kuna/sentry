@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SENTRY - Scam Detection Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .severity-high {
+            background: #dc3545;
+            color: white;
+        }
+        .severity-medium {
+            background: #ffc107;
+            color: #000;
+        }
+        .severity-low {
+            background: #28a745;
+            color: white;
+        }
+        .campaign-card {
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        .campaign-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .alert-item {
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .live-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .keyword-badge {
+            background: #e7e7ff;
+            color: #667eea;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin: 3px;
+            display: inline-block;
+            font-size: 0.9rem;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        #reportForm {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .section-title {
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand">
+                <i class="fas fa-shield-alt"></i> SENTRY
+                <small class="ms-2" style="font-size: 0.8rem; opacity: 0.9;">Social Engineering Threat Reporting</small>
+            </span>
+            <span class="text-white">
+                <span class="live-indicator"></span> Live
+            </span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Left Column: Stats & Report Form -->
+            <div class="col-md-4">
+                <!-- Statistics Cards -->
+                <h5 class="section-title">Dashboard Statistics</h5>
+                <div class="row g-3" id="statsCards">
+                    <div class="col-6">
+                        <div class="card stat-card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                                <h3 id="totalReports">0</h3>
+                                <small class="text-muted">Total Reports</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card stat-card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-bullseye fa-2x text-primary mb-2"></i>
+                                <h3 id="activeCampaigns">0</h3>
+                                <small class="text-muted">Active Campaigns</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card stat-card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                                <h3 id="reports24h">0</h3>
+                                <small class="text-muted">Last 24 Hours</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card stat-card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-fire fa-2x text-warning mb-2"></i>
+                                <h3 id="highRiskReports">0</h3>
+                                <small class="text-muted">High Risk</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trending Keywords -->
+                <h5 class="section-title mt-4">Trending Keywords</h5>
+                <div class="card">
+                    <div class="card-body">
+                        <div id="trendingKeywords"></div>
+                    </div>
+                </div>
+
+                <!-- Report Form -->
+                <h5 class="section-title mt-4">Report Scam</h5>
+                <form id="reportForm">
+                    <div class="mb-3">
+                        <label for="messageInput" class="form-label">Scam Message</label>
+                        <textarea class="form-control" id="messageInput" rows="5" 
+                            placeholder="Paste the suspicious message here..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="channelInput" class="form-label">Channel</label>
+                        <select class="form-select" id="channelInput" required>
+                            <option value="SMS">SMS</option>
+                            <option value="WhatsApp">WhatsApp</option>
+                            <option value="Call">Call</option>
+                            <option value="Email">Email</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-paper-plane"></i> Submit Report
+                    </button>
+                </form>
+                <div id="reportResult" class="mt-3"></div>
+            </div>
+
+            <!-- Middle Column: Campaigns -->
+            <div class="col-md-4">
+                <h5 class="section-title">Active Scam Campaigns</h5>
+                <div id="campaignsList"></div>
+            </div>
+
+            <!-- Right Column: Alerts -->
+            <div class="col-md-4">
+                <h5 class="section-title">Live Alerts</h5>
+                <div id="alertsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Campaign Detail Modal -->
+    <div class="modal fade" id="campaignModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Campaign Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="campaignDetails">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
