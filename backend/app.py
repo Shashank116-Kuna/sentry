@@ -3,6 +3,7 @@ SENTRY - Main FastAPI Application
 """
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import json
